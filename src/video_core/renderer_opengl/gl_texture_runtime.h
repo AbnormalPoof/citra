@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/math_util.h"
+#include "video_core/rasterizer_cache/framebuffer_base.h"
 #include "video_core/rasterizer_cache/surface_base.h"
 #include "video_core/renderer_opengl/gl_format_reinterpreter.h"
 #include "video_core/renderer_opengl/texture_filters/texture_filterer.h"
@@ -71,6 +72,7 @@ struct CachedTextureCube;
  */
 class TextureRuntime {
     friend class Surface;
+    friend class Framebuffer;
 
 public:
     explicit TextureRuntime(Driver& driver);
@@ -131,6 +133,7 @@ private:
     std::vector<u8> staging_buffer;
     std::array<ReinterpreterList, VideoCore::PIXEL_FORMAT_COUNT> reinterpreters;
     std::unordered_multimap<HostTextureTag, Allocation, HostTextureTag::Hash> texture_recycler;
+    std::unordered_map<u64, OGLFramebuffer, Common::IdentityHash<u64>> framebuffer_cache;
     std::array<OGLFramebuffer, 3> draw_fbos;
     std::array<OGLFramebuffer, 3> read_fbos;
 };
@@ -178,6 +181,30 @@ private:
     TextureRuntime* runtime;
     Driver* driver;
     Allocation alloc{};
+};
+
+class Framebuffer : public VideoCore::FramebufferBase {
+public:
+    explicit Framebuffer(TextureRuntime& runtime, Surface* const color,
+                         Surface* const depth_stencil, const Pica::Regs& regs,
+                         Common::Rectangle<u32> surfaces_rect);
+    ~Framebuffer();
+
+    [[nodiscard]] GLuint Handle() const noexcept {
+        return handle;
+    }
+
+    [[nodiscard]] GLuint Attachment(VideoCore::SurfaceType type) const noexcept {
+        return attachments[Index(type)];
+    }
+
+    bool HasAttachment(VideoCore::SurfaceType type) const noexcept {
+        return static_cast<bool>(attachments[Index(type)]);
+    }
+
+private:
+    std::array<GLuint, 2> attachments{};
+    GLuint handle{};
 };
 
 } // namespace OpenGL

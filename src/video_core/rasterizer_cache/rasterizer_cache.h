@@ -9,6 +9,7 @@
 #include <boost/icl/interval_set.hpp>
 #include "video_core/rasterizer_cache/surface_base.h"
 #include "video_core/rasterizer_cache/surface_params.h"
+#include "video_core/renderer_opengl/gl_texture_runtime.h"
 #include "video_core/texture/texture_decode.h"
 
 namespace Memory {
@@ -18,11 +19,6 @@ class MemorySystem;
 namespace Pica {
 struct Regs;
 }
-
-namespace OpenGL {
-class Surface;
-class TextureRuntime;
-} // namespace OpenGL
 
 namespace VideoCore {
 
@@ -50,8 +46,12 @@ public:
                   "Incorrect interval types");
 
     using SurfaceRect_Tuple = std::tuple<Surface, Common::Rectangle<u32>>;
-    using SurfaceSurfaceRect_Tuple = std::tuple<Surface, Surface, Common::Rectangle<u32>>;
     using PageMap = boost::icl::interval_map<u32, int>;
+
+    struct RenderTargets {
+        Surface color_surface;
+        Surface depth_surface;
+    };
 
 public:
     RasterizerCache(Memory::MemorySystem& memory, OpenGL::TextureRuntime& runtime,
@@ -88,8 +88,10 @@ public:
     const OpenGL::CachedTextureCube& GetTextureCube(const TextureCubeConfig& config);
 
     /// Get the color and depth surfaces based on the framebuffer configuration
-    SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,
-                                                    const Common::Rectangle<s32>& viewport_rect);
+    OpenGL::Framebuffer GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb);
+
+    /// Marks the draw rectangle defined in framebuffer as invalid
+    void InvalidateFramebuffer(const OpenGL::Framebuffer& framebuffer);
 
     /// Get a surface that matches the fill config
     Surface GetFillSurface(const GPU::Regs::MemoryFillConfig& config);
@@ -156,6 +158,7 @@ private:
     SurfaceMap dirty_regions;
     SurfaceSet remove_surfaces;
     u16 resolution_scale_factor;
+    RenderTargets render_targets;
     std::unordered_map<TextureCubeConfig, OpenGL::CachedTextureCube> texture_cube_cache;
 };
 
