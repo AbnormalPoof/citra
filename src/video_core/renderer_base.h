@@ -88,7 +88,7 @@ public:
     }
 
     /// Returns true if a screenshot is being processed
-    bool IsScreenshotPending() const;
+    [[nodiscard]] bool IsScreenshotPending() const;
 
     /// Request a screenshot of the next frame
     void RequestScreenshot(void* data, std::function<void()> callback,

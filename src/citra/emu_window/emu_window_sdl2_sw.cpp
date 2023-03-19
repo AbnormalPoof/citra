@@ -7,6 +7,7 @@
 #include <string>
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include <SDL_rect.h>
 #include "citra/emu_window/emu_window_sdl2_sw.h"
 #include "common/color.h"
 #include "common/scm_rev.h"
@@ -66,7 +67,7 @@ void EmuWindow_SDL2_SW::Present() {
                                Settings::values.bg_blue.GetValue() * 255, 0xFF);
         SDL_RenderClear(renderer);
 
-        const auto DrawScreen = [&](int fb_id) {
+        const auto draw_screen = [&](int fb_id) {
             const auto dst_rect = fb_id == 0 ? layout.top_screen : layout.bottom_screen;
             SDL_Rect sdl_rect{static_cast<int>(dst_rect.left), static_cast<int>(dst_rect.top),
                               static_cast<int>(dst_rect.GetWidth()),
@@ -76,8 +77,8 @@ void EmuWindow_SDL2_SW::Present() {
             SDL_FreeSurface(screen);
         };
 
-        DrawScreen(0);
-        DrawScreen(1);
+        draw_screen(0);
+        draw_screen(1);
 
         SDL_RenderPresent(renderer);
         SDL_UpdateWindowSurface(render_window);

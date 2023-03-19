@@ -5,8 +5,6 @@
 #pragma once
 
 #include <memory>
-#include <utility>
-#include <SDL_rect.h>
 #include "citra/emu_window/emu_window_sdl2.h"
 
 struct SDL_Renderer;

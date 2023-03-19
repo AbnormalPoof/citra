@@ -52,12 +52,12 @@
           <widget class="QComboBox" name="graphics_api_combo">
            <item>
             <property name="text">
-             <string>OpenGL</string>
+             <string>Software</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>Software</string>
+             <string>OpenGL</string>
             </property>
            </item>
           </widget>

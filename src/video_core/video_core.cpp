@@ -41,16 +41,18 @@ void Init(Frontend::EmuWindow& emu_window, Frontend::EmuWindow* secondary_window
     Pica::Init();
 
     const Settings::GraphicsAPI graphics_api = Settings::values.graphics_api.GetValue();
+    OpenGL::GLES = Settings::values.use_gles.GetValue();
+
     switch (graphics_api) {
     case Settings::GraphicsAPI::Software:
         g_renderer = std::make_unique<VideoCore::RendererSoftware>(system, emu_window);
         break;
     case Settings::GraphicsAPI::OpenGL:
-        OpenGL::GLES = Settings::values.use_gles.GetValue();
         g_renderer = std::make_unique<OpenGL::RendererOpenGL>(system, emu_window, secondary_window);
         break;
     default:
-        UNREACHABLE_MSG("Unknown graphics API {}", graphics_api);
+        LOG_CRITICAL(Render, "Unknown graphics API {}, using OpenGL", graphics_api);
+        g_renderer = std::make_unique<OpenGL::RendererOpenGL>(system, emu_window, secondary_window);
     }
 }
 
@@ -64,14 +66,14 @@ void Shutdown() {
 
 u16 GetResolutionScaleFactor() {
     const auto graphics_api = Settings::values.graphics_api.GetValue();
-    if (graphics_api != Settings::GraphicsAPI::Software) {
-        return Settings::values.resolution_factor.GetValue()
-                   ? Settings::values.resolution_factor.GetValue()
-                   : g_renderer->GetRenderWindow().GetFramebufferLayout().GetScalingRatio();
-    } else {
+    if (graphics_api == Settings::GraphicsAPI::Software) {
         // Software renderer always render at native resolution
         return 1;
     }
+
+    return Settings::values.resolution_factor.GetValue()
+               ? Settings::values.resolution_factor.GetValue()
+               : g_renderer->GetRenderWindow().GetFramebufferLayout().GetScalingRatio();
 }
 
 template <class Archive>

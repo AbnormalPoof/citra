@@ -99,8 +99,12 @@ cpu_clock_percentage =
 
 [Renderer]
 # Whether to render using OpenGL or Software
-# 0: OpenGL (default), 1: Software
+# 0: Software, 1: OpenGL (default)
 graphics_api =
+
+# Whether to render using GLES or OpenGL
+# 0 (default): OpenGL, 1: GLES
+use_gles =
 
 # Whether to use hardware shaders to emulate 3DS shaders
 # 0: Software, 1 (default): Hardware
@@ -327,7 +331,7 @@ use_gdbstub=false
 gdbstub_port=24689
 
 # Whether to enable additional debugging information during emulation
-# 1: On, 0 (default): Off
+# 0 (default): Off, 1: On
 renderer_debug =
 
 # To LLE a service module add "LLE\<module name>=true"

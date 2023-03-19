@@ -153,7 +153,8 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath) {
         window = std::make_unique<EmuWindow_Android>(s_surf);
         break;
     default:
-        UNREACHABLE_MSG("Unknown graphics API {}", graphics_api);
+        LOG_CRITICAL(Frontend, "Unknown graphics API {}, using OpenGL", graphics_api);
+        window = std::make_unique<EmuWindow_Android>(s_surf);
     }
 
     Core::System& system{Core::System::GetInstance()};

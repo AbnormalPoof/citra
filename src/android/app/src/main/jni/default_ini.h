@@ -118,10 +118,6 @@ separable_shader =
 # 0: Off (Default. Faster, but causes issues in some games) 1: On (Slower, but correct)
 shaders_accurate_mul =
 
-# Enable asynchronous GPU emulation
-# 0: Off (Slower, but more accurate) 1: On (Default. Faster, but may cause issues in some games)
-use_asynchronous_gpu_emulation =
-
 # Whether to use the Just-In-Time (JIT) compiler for shader emulation
 # 0: Interpreter (slow), 1 (default): JIT (fast)
 use_shader_jit =
@@ -324,7 +320,7 @@ log_filter = *:Info
 record_frame_times =
 
 # Whether to enable additional debugging information during emulation
-# 1: On, 0 (default): Off
+# 0 (default): Off, 1: On
 renderer_debug =
 
 # Port for listening to GDB connections.

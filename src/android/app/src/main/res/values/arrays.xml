@@ -177,6 +177,6 @@
     </string-array>
 
     <integer-array name="graphicsApiValues">
-        <item>0</item>
+        <item>1</item>
     </integer-array>
 </resources>

@@ -20,6 +20,8 @@
 
 namespace Settings {
 
+namespace {
+
 std::string_view GraphicsAPIName(GraphicsAPI api) {
     switch (api) {
     case GraphicsAPI::Software:
@@ -29,7 +31,7 @@ std::string_view GraphicsAPIName(GraphicsAPI api) {
     }
 }
 
-std::string_view AudioEmulatioName(AudioEmulation emulation) {
+std::string_view AudioEmulationName(AudioEmulation emulation) {
     switch (emulation) {
     case AudioEmulation::HLE:
         return "HLE";
@@ -39,6 +41,8 @@ std::string_view AudioEmulatioName(AudioEmulation emulation) {
         return "LLE Multithreaded";
     }
 };
+
+} // Anonymous namespace
 
 Values values = {};
 static bool configuring_global = true;
@@ -130,7 +134,7 @@ void LogSettings() {
     log_setting("Utility_DumpTextures", values.dump_textures.GetValue());
     log_setting("Utility_CustomTextures", values.custom_textures.GetValue());
     log_setting("Utility_UseDiskShaderCache", values.use_disk_shader_cache.GetValue());
-    log_setting("Audio_Emulation", AudioEmulatioName(values.audio_emulation.GetValue()));
+    log_setting("Audio_Emulation", AudioEmulationName(values.audio_emulation.GetValue()));
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
     log_setting("Audio_EnableAudioStretching", values.enable_audio_stretching.GetValue());
     log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());

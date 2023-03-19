@@ -72,10 +72,6 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 }
 
 Driver::Driver(Core::TelemetrySession& telemetry_session_) : telemetry_session{telemetry_session_} {
-    /*
-     * Qualcomm has some spammy info messages that are marked as errors but not important
-     * https://developer.qualcomm.com/comment/11845
-     */
     const bool enable_debug = Settings::values.renderer_debug.GetValue();
     if (enable_debug) {
         glEnable(GL_DEBUG_OUTPUT);
@@ -122,6 +118,10 @@ void Driver::DeduceVendor() {
         vendor = Vendor::Intel;
     } else if (gpu_vendor.find("ARM") != gpu_vendor.npos) {
         vendor = Vendor::ARM;
+    } else if (gpu_vendor.find("Qualcomm") != gpu_vendor.npos) {
+        vendor = Vendor::Qualcomm;
+    } else if (gpu_vendor.find("Samsung") != gpu_vendor.npos) {
+        vendor = Vendor::Samsung;
     } else if (gpu_vendor.find("GDI Generic") != gpu_vendor.npos) {
         vendor = Vendor::Generic;
     }

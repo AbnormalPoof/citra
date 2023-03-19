@@ -288,7 +288,7 @@ struct SoftwareRenderWidget : public RenderWidget {
         const auto layout{Layout::DefaultFrameLayout(width(), height(), false, false)};
         QPainter painter(this);
 
-        const auto DrawScreen = [&](int fb_id) {
+        const auto draw_screen = [&](int fb_id) {
             const auto rect = fb_id == 0 ? layout.top_screen : layout.bottom_screen;
             const QImage screen = LoadFramebuffer(fb_id);
             painter.drawImage(rect.left, rect.top, screen);
@@ -297,8 +297,8 @@ struct SoftwareRenderWidget : public RenderWidget {
         painter.fillRect(rect(), qRgb(Settings::values.bg_red.GetValue() * 255,
                                       Settings::values.bg_green.GetValue() * 255,
                                       Settings::values.bg_blue.GetValue() * 255));
-        DrawScreen(0);
-        DrawScreen(1);
+        draw_screen(0);
+        draw_screen(1);
 
         painter.end();
     }
@@ -587,8 +587,6 @@ void GRenderWindow::resizeEvent(QResizeEvent* event) {
 }
 
 bool GRenderWindow::InitRenderTarget() {
-    ReleaseRenderTarget();
-
     {
         // Create a dummy render widget so that Qt
         // places the render window at the correct position.
@@ -632,6 +630,7 @@ void GRenderWindow::ReleaseRenderTarget() {
         child_widget->deleteLater();
         child_widget = nullptr;
     }
+    main_context.reset();
 }
 
 void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_path) {

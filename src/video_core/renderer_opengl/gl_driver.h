@@ -19,7 +19,9 @@ enum class Vendor {
     Nvidia = 2,
     Intel = 3,
     ARM = 4,
-    Generic = 5,
+    Qualcomm = 5,
+    Samsung = 6,
+    Generic = 7,
 };
 
 enum class DriverBug {

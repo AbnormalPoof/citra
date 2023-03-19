@@ -115,7 +115,7 @@ void Config::ReadValues() {
 
     // Renderer
     Settings::values.graphics_api =
-        static_cast<Settings::GraphicsAPI>(sdl2_config->GetInteger("Renderer", "graphics_api", 0));
+        static_cast<Settings::GraphicsAPI>(sdl2_config->GetInteger("Renderer", "graphics_api", 1));
     Settings::values.use_gles = sdl2_config->GetBoolean("Renderer", "use_gles", true);
     Settings::values.use_hw_shader = sdl2_config->GetBoolean("Renderer", "use_hw_shader", true);
     Settings::values.shaders_accurate_mul =

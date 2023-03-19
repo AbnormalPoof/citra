@@ -16,8 +16,8 @@
 namespace Settings {
 
 enum class GraphicsAPI {
-    OpenGL = 0,
-    Software = 1,
+    Software = 0,
+    OpenGL = 1,
 };
 
 enum class InitClock : u32 {
