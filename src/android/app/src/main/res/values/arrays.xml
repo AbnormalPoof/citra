@@ -173,7 +173,7 @@
     </integer-array>
 
     <string-array name="graphicsApiNames">
-        <item>OpenGL</item>
+        <item>OpenGLES</item>
     </string-array>
 
     <integer-array name="graphicsApiValues">
