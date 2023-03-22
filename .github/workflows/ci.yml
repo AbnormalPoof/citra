@@ -135,12 +135,6 @@ jobs:
         with:
           name: macos
           path: artifacts/
-      - name: Delete intermediate artifacts
-        uses: geekyeggo/delete-artifact@v2
-        with:
-          name: |
-            macos-x86_64
-            macos-arm64
   windows:
     runs-on: windows-latest
     steps:
