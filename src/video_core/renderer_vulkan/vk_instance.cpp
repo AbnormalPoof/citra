@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <set>
 #include <span>
 #include "common/assert.h"
 #include "common/settings.h"
@@ -623,21 +624,28 @@ bool Instance::CreateDevice() {
         return false;
     }
 
-    std::array<const char*, 12> enabled_extensions;
-    u32 enabled_extension_count = 0;
-    const auto AddExtension = [&](std::string_view extension) -> bool {
+    std::vector<const char*> enabled_extensions;
+    const auto AddExtension = [&](std::string_view extension, bool blacklist = false,
+                                  std::string_view reason = "") -> bool {
         auto result = std::find_if(available_extensions.begin(), available_extensions.end(),
                                    [&](const std::string& name) { return name == extension; });
 
-        if (result != available_extensions.end()) {
+        if (result != available_extensions.end() && !blacklist) {
             LOG_INFO(Render_Vulkan, "Enabling extension: {}", extension);
-            enabled_extensions[enabled_extension_count++] = extension.data();
+            enabled_extensions.push_back(extension.data());
             return true;
+        } else if (blacklist) {
+            LOG_WARNING(Render_Vulkan, "Extension {} has been blacklisted because {}", extension,
+                        reason);
         }
 
         LOG_WARNING(Render_Vulkan, "Extension {} unavailable.", extension);
         return false;
     };
+
+    const bool is_arm = driver_id == vk::DriverIdKHR::eArmProprietary;
+    const bool is_qualcomm = driver_id == vk::DriverIdKHR::eQualcommProprietary;
+    const bool is_radv = driver_id == vk::DriverIdKHR::eMesaRadv;
 
     AddExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     timeline_semaphores = AddExtension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -646,9 +654,14 @@ bool Instance::CreateDevice() {
     shader_stencil_export = AddExtension(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME);
     bool has_portability_subset = AddExtension(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     bool has_dynamic_rendering = AddExtension(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    bool has_extended_dynamic_state = AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    bool has_extended_dynamic_state2 = AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    bool has_extended_dynamic_state3 = AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    bool has_extended_dynamic_state =
+        AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, is_arm || is_qualcomm,
+                     "it is broken on Qualcomm and ARM drivers");
+    bool has_extended_dynamic_state2 =
+        AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME, is_qualcomm,
+                     "it is broken on Qualcomm drivers");
+    bool has_extended_dynamic_state3 = AddExtension(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+                                                    is_radv, "it is broken on RADV drivers");
     bool has_custom_border_color = AddExtension(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     bool has_index_type_uint8 = AddExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     bool has_pipeline_creation_cache_control =
@@ -710,7 +723,7 @@ bool Instance::CreateDevice() {
         vk::DeviceCreateInfo{
             .queueCreateInfoCount = queue_count,
             .pQueueCreateInfos = queue_infos.data(),
-            .enabledExtensionCount = enabled_extension_count,
+            .enabledExtensionCount = static_cast<u32>(enabled_extensions.size()),
             .ppEnabledExtensionNames = enabled_extensions.data(),
         },
         vk::PhysicalDeviceFeatures2{

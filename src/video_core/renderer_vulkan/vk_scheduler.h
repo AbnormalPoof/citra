@@ -207,11 +207,10 @@ private:
     std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
     vk::CommandBuffer current_cmdbuf;
     StateFlags state{};
+    std::mutex execution_mutex;
     std::mutex reserve_mutex;
-    std::mutex work_mutex;
     std::mutex queue_mutex;
-    std::condition_variable_any work_cv;
-    std::condition_variable wait_cv;
+    std::condition_variable_any event_cv;
     std::jthread worker_thread;
     bool use_worker_thread;
 };

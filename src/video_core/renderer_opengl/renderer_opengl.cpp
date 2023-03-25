@@ -593,30 +593,37 @@ void RendererOpenGL::ReloadShader() {
         shader_data += fragment_shader_precision_OES;
     }
 
-    const auto LoadShader = [&shader_data](std::string_view name, std::string_view shader) {
-        if (Settings::values.pp_shader_name.GetValue() == name) {
-            shader_data += shader;
+    const Settings::StereoRenderOption render_3d = Settings::values.render_3d.GetValue();
+    if (render_3d == Settings::StereoRenderOption::Anaglyph) {
+        if (Settings::values.anaglyph_shader_name.GetValue() == "dubois (builtin)") {
+            shader_data += HostShaders::OPENGL_PRESENT_ANAGLYPH_FRAG;
         } else {
             std::string shader_text = OpenGL::GetPostProcessingShaderCode(
-                true, Settings::values.pp_shader_name.GetValue());
+                true, Settings::values.anaglyph_shader_name.GetValue());
             if (shader_text.empty()) {
-                shader_data += shader;
+                // Should probably provide some information that the shader couldn't load
+                shader_data += HostShaders::OPENGL_PRESENT_ANAGLYPH_FRAG;
             } else {
                 shader_data += shader_text;
             }
         }
-    };
-
-    const Settings::StereoRenderOption render_3d = Settings::values.render_3d.GetValue();
-    if (render_3d == Settings::StereoRenderOption::Anaglyph) {
-        LoadShader("dubois (builtin)", HostShaders::OPENGL_PRESENT_ANAGLYPH_FRAG);
     } else if (render_3d == Settings::StereoRenderOption::Interlaced ||
                render_3d == Settings::StereoRenderOption::ReverseInterlaced) {
-        LoadShader("horizontal (builtin)", HostShaders::OPENGL_PRESENT_INTERLACED_FRAG);
+        shader_data += HostShaders::OPENGL_PRESENT_INTERLACED_FRAG;
     } else {
-        LoadShader("none (builtin)", HostShaders::OPENGL_PRESENT_FRAG);
+        if (Settings::values.pp_shader_name.GetValue() == "none (builtin)") {
+            shader_data += HostShaders::OPENGL_PRESENT_INTERLACED_FRAG;
+        } else {
+            std::string shader_text = OpenGL::GetPostProcessingShaderCode(
+                false, Settings::values.pp_shader_name.GetValue());
+            if (shader_text.empty()) {
+                // Should probably provide some information that the shader couldn't load
+                shader_data += HostShaders::OPENGL_PRESENT_INTERLACED_FRAG;
+            } else {
+                shader_data += shader_text;
+            }
+        }
     }
-
     shader.Create(HostShaders::OPENGL_PRESENT_VERT, shader_data.c_str());
     state.draw.shader_program = shader.handle;
     state.Apply();

@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.util.Pair;
 import android.util.SparseIntArray;
 import android.view.InputDevice;
 import android.view.KeyEvent;
@@ -21,6 +21,8 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,6 +33,7 @@ import androidx.fragment.app.FragmentActivity;
 import org.citra.citra_emu.CitraApplication;
 import org.citra.citra_emu.NativeLibrary;
 import org.citra.citra_emu.R;
+import org.citra.citra_emu.contracts.OpenFileResultContract;
 import org.citra.citra_emu.features.cheats.ui.CheatsActivity;
 import org.citra.citra_emu.features.settings.model.view.InputBindingSetting;
 import org.citra.citra_emu.features.settings.ui.SettingsActivity;
@@ -85,6 +88,18 @@ public final class EmulationActivity extends AppCompatActivity {
     private static final int EMULATION_RUNNING_NOTIFICATION = 0x1000;
     private static SparseIntArray buttonsActionsMap = new SparseIntArray();
 
+    private final ActivityResultLauncher<Boolean> mOpenFileLauncher =
+        registerForActivityResult(new OpenFileResultContract(), result -> {
+            if (result == null)
+                return;
+            String[] selectedFiles = FileBrowserHelper.getSelectedFiles(
+                result, getApplicationContext(), Collections.singletonList("bin"));
+            if (selectedFiles == null)
+                return;
+
+            onAmiiboSelected(selectedFiles[0]);
+        });
+
     static {
         buttonsActionsMap.append(R.id.menu_emulation_edit_layout,
                 EmulationActivity.MENU_ACTION_EDIT_CONTROLS_PLACEMENT);
@@ -124,7 +139,6 @@ public final class EmulationActivity extends AppCompatActivity {
                 .append(R.id.menu_emulation_close_game, EmulationActivity.MENU_ACTION_CLOSE_GAME);
     }
 
-    private View mDecorView;
     private EmulationFragment mEmulationFragment;
     private SharedPreferences mPreferences;
     private ControllerMappingHelper mControllerMappingHelper;
@@ -170,16 +184,6 @@ public final class EmulationActivity extends AppCompatActivity {
 
         mControllerMappingHelper = new ControllerMappingHelper();
 
-        // Get a handle to the Window containing the UI.
-        mDecorView = getWindow().getDecorView();
-        mDecorView.setOnSystemUiVisibilityChangeListener(visibility ->
-        {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                // Go back to immersive fullscreen mode in 3s
-                Handler handler = new Handler(getMainLooper());
-                handler.postDelayed(this::enableFullscreenImmersive, 3000 /* 3s */);
-            }
-        });
         // Set these options now so that the SurfaceView the game renders into is the right size.
         enableFullscreenImmersive();
 
@@ -275,14 +279,14 @@ public final class EmulationActivity extends AppCompatActivity {
     }
 
     private void enableFullscreenImmersive() {
-        // It would be nice to use IMMERSIVE_STICKY, but that doesn't show the toolbar.
-        mDecorView.setSystemUiVisibility(
+        getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
                         View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
                         View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
                         View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                         View.SYSTEM_UI_FLAG_FULLSCREEN |
-                        View.SYSTEM_UI_FLAG_IMMERSIVE);
+                        View.SYSTEM_UI_FLAG_IMMERSIVE |
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     @Override
@@ -465,9 +469,7 @@ public final class EmulationActivity extends AppCompatActivity {
                 break;
 
             case MENU_ACTION_LOAD_AMIIBO:
-                FileBrowserHelper.openFilePicker(this, REQUEST_SELECT_AMIIBO,
-                        R.string.select_amiibo,
-                        Collections.singletonList("bin"), false);
+                mOpenFileLauncher.launch(false);
                 break;
 
             case MENU_ACTION_REMOVE_AMIIBO:
@@ -560,20 +562,8 @@ public final class EmulationActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent result) {
         super.onActivityResult(requestCode, resultCode, result);
-        switch (requestCode) {
-            case StillImageCameraHelper.REQUEST_CAMERA_FILE_PICKER:
-                StillImageCameraHelper.OnFilePickerResult(resultCode == RESULT_OK ? result : null);
-                break;
-            case REQUEST_SELECT_AMIIBO:
-                // If the user picked a file, as opposed to just backing out.
-                if (resultCode == MainActivity.RESULT_OK) {
-                    String[] selectedFiles = FileBrowserHelper.getSelectedFiles(result);
-                    if (selectedFiles == null)
-                        return;
-
-                    onAmiiboSelected(selectedFiles[0]);
-                }
-                break;
+        if (requestCode == StillImageCameraHelper.REQUEST_CAMERA_FILE_PICKER) {
+            StillImageCameraHelper.OnFilePickerResult(resultCode == RESULT_OK ? result : null);
         }
     }
 

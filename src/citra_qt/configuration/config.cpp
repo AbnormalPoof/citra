@@ -149,14 +149,14 @@ void Config::ReadGlobalSetting(Settings::SwitchableSetting<Type, ranged>& settin
     const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     setting.SetGlobal(use_global);
     if (global || !use_global) {
-        QVariant value{};
+        QVariant default_value{};
         if constexpr (std::is_enum_v<Type>) {
             using TypeU = std::underlying_type_t<Type>;
-            value = QVariant::fromValue<TypeU>(static_cast<TypeU>(setting.GetDefault()));
-            setting.SetValue(static_cast<Type>(ReadSetting(name, value).value<TypeU>()));
+            default_value = QVariant::fromValue<TypeU>(static_cast<TypeU>(setting.GetDefault()));
+            setting.SetValue(static_cast<Type>(ReadSetting(name, default_value).value<TypeU>()));
         } else {
-            value = QVariant::fromValue<Type>(setting.GetDefault());
-            setting.SetValue(ReadSetting(name, value).value<Type>());
+            default_value = QVariant::fromValue<Type>(setting.GetDefault());
+            setting.SetValue(ReadSetting(name, default_value).value<Type>());
         }
     }
 }
@@ -180,6 +180,15 @@ void Config::WriteBasicSetting(const Settings::Setting<std::string>& setting) {
     const std::string& value = setting.GetValue();
     qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
     qt_config->setValue(name, QString::fromStdString(value));
+}
+
+// Explicit u16 definition: Qt would store it as QMetaType otherwise, which is not human-readable
+template <>
+void Config::WriteBasicSetting(const Settings::Setting<u16>& setting) {
+    const QString name = QString::fromStdString(setting.GetLabel());
+    const u16& value = setting.GetValue();
+    qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
+    qt_config->setValue(name, static_cast<u32>(value));
 }
 
 template <typename Type, bool ranged>
@@ -224,6 +233,20 @@ void Config::WriteGlobalSetting(const Settings::SwitchableSetting<std::string>& 
     }
 }
 
+// Explicit u16 definition: Qt would store it as QMetaType otherwise, which is not human-readable
+template <>
+void Config::WriteGlobalSetting(const Settings::SwitchableSetting<u16, true>& setting) {
+    const QString name = QString::fromStdString(setting.GetLabel());
+    const u16& value = setting.GetValue(global);
+    if (!global) {
+        qt_config->setValue(name + QStringLiteral("/use_global"), setting.UsingGlobal());
+    }
+    if (global || !setting.UsingGlobal()) {
+        qt_config->setValue(name + QStringLiteral("/default"), value == setting.GetDefault());
+        qt_config->setValue(name, static_cast<u32>(value));
+    }
+}
+
 void Config::ReadValues() {
     if (global) {
         ReadControlValues();
@@ -233,7 +256,6 @@ void Config::ReadValues() {
         ReadDebuggingValues();
         ReadWebServiceValues();
         ReadVideoDumpingValues();
-        ReadUtilityValues();
     }
 
     ReadUIValues();
@@ -242,6 +264,7 @@ void Config::ReadValues() {
     ReadLayoutValues();
     ReadAudioValues();
     ReadSystemValues();
+    ReadUtilityValues();
 }
 
 void Config::ReadAudioValues() {
@@ -413,9 +436,9 @@ void Config::ReadControlValues() {
 void Config::ReadUtilityValues() {
     qt_config->beginGroup(QStringLiteral("Utility"));
 
-    ReadBasicSetting(Settings::values.dump_textures);
-    ReadBasicSetting(Settings::values.custom_textures);
-    ReadBasicSetting(Settings::values.preload_textures);
+    ReadGlobalSetting(Settings::values.dump_textures);
+    ReadGlobalSetting(Settings::values.custom_textures);
+    ReadGlobalSetting(Settings::values.preload_textures);
 
     qt_config->endGroup();
 }
@@ -476,14 +499,9 @@ void Config::ReadLayoutValues() {
 
     ReadGlobalSetting(Settings::values.render_3d);
     ReadGlobalSetting(Settings::values.factor_3d);
-    Settings::values.pp_shader_name =
-        ReadSetting(QStringLiteral("pp_shader_name"), (Settings::values.render_3d.GetValue() ==
-                                                       Settings::StereoRenderOption::Anaglyph)
-                                                          ? QStringLiteral("dubois (builtin)")
-                                                          : QStringLiteral("none (builtin)"))
-            .toString()
-            .toStdString();
     ReadGlobalSetting(Settings::values.filter_mode);
+    ReadGlobalSetting(Settings::values.pp_shader_name);
+    ReadGlobalSetting(Settings::values.anaglyph_shader_name);
     ReadGlobalSetting(Settings::values.layout_option);
     ReadGlobalSetting(Settings::values.swap_screen);
     ReadGlobalSetting(Settings::values.upright_screen);
@@ -818,7 +836,6 @@ void Config::SaveValues() {
         SaveDebuggingValues();
         SaveWebServiceValues();
         SaveVideoDumpingValues();
-        SaveUtilityValues();
     }
 
     SaveUIValues();
@@ -827,6 +844,7 @@ void Config::SaveValues() {
     SaveLayoutValues();
     SaveAudioValues();
     SaveSystemValues();
+    SaveUtilityValues();
     qt_config->sync();
 }
 
@@ -939,9 +957,9 @@ void Config::SaveControlValues() {
 void Config::SaveUtilityValues() {
     qt_config->beginGroup(QStringLiteral("Utility"));
 
-    WriteBasicSetting(Settings::values.dump_textures);
-    WriteBasicSetting(Settings::values.custom_textures);
-    WriteBasicSetting(Settings::values.preload_textures);
+    WriteGlobalSetting(Settings::values.dump_textures);
+    WriteGlobalSetting(Settings::values.custom_textures);
+    WriteGlobalSetting(Settings::values.preload_textures);
 
     qt_config->endGroup();
 }
@@ -997,12 +1015,9 @@ void Config::SaveLayoutValues() {
 
     WriteGlobalSetting(Settings::values.render_3d);
     WriteGlobalSetting(Settings::values.factor_3d);
-    WriteSetting(QStringLiteral("pp_shader_name"),
-                 QString::fromStdString(Settings::values.pp_shader_name.GetValue()),
-                 (Settings::values.render_3d.GetValue() == Settings::StereoRenderOption::Anaglyph)
-                     ? QStringLiteral("dubois (builtin)")
-                     : QStringLiteral("none (builtin)"));
     WriteGlobalSetting(Settings::values.filter_mode);
+    WriteGlobalSetting(Settings::values.pp_shader_name);
+    WriteGlobalSetting(Settings::values.anaglyph_shader_name);
     WriteGlobalSetting(Settings::values.layout_option);
     WriteGlobalSetting(Settings::values.swap_screen);
     WriteGlobalSetting(Settings::values.upright_screen);
@@ -1288,15 +1303,6 @@ QVariant Config::ReadSetting(const QString& name, const QVariant& default_value)
     return result;
 }
 
-template <typename Type>
-void Config::ReadSettingGlobal(Type& setting, const QString& name,
-                               const QVariant& default_value) const {
-    const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
-    if (global || !use_global) {
-        setting = ReadSetting(name, default_value).value<Type>();
-    }
-}
-
 void Config::WriteSetting(const QString& name, const QVariant& value) {
     qt_config->setValue(name, value);
 }
@@ -1305,17 +1311,6 @@ void Config::WriteSetting(const QString& name, const QVariant& value,
                           const QVariant& default_value) {
     qt_config->setValue(name + QStringLiteral("/default"), value == default_value);
     qt_config->setValue(name, value);
-}
-
-void Config::WriteSetting(const QString& name, const QVariant& value, const QVariant& default_value,
-                          bool use_global) {
-    if (!global) {
-        qt_config->setValue(name + QStringLiteral("/use_global"), use_global);
-    }
-    if (global || !use_global) {
-        qt_config->setValue(name + QStringLiteral("/default"), value == default_value);
-        qt_config->setValue(name, value);
-    }
 }
 
 void Config::Reload() {

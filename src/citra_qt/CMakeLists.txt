@@ -271,6 +271,10 @@ if (NOT WIN32)
     target_include_directories(citra-qt PRIVATE ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endif()
 
+if (UNIX AND NOT APPLE)
+    target_link_libraries(citra-qt PRIVATE Qt5::DBus)
+endif()
+
 target_compile_definitions(citra-qt PRIVATE
     # Use QStringBuilder for string concatenation to reduce
     # the overall number of temporary strings created.

@@ -212,6 +212,10 @@ if (ENABLE_QT)
 
     find_package(Qt5 REQUIRED COMPONENTS Widgets Multimedia Concurrent ${QT_PREFIX_HINT})
 
+    if (UNIX AND NOT APPLE)
+        find_package(Qt5 REQUIRED COMPONENTS DBus ${QT_PREFIX_HINT})
+    endif()
+
     if (ENABLE_QT_TRANSLATION)
         find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
     endif()
@@ -387,10 +391,11 @@ endforeach()
 
 # Boost
 if (USE_SYSTEM_BOOST)
-    find_package(Boost 1.70.0 COMPONENTS serialization REQUIRED)
+    find_package(Boost 1.70.0 COMPONENTS serialization iostreams REQUIRED)
 else()
     add_library(Boost::boost ALIAS boost)
     add_library(Boost::serialization ALIAS boost_serialization)
+    add_library(Boost::iostreams ALIAS boost_iostreams)
 endif()
 
 # SDL2
