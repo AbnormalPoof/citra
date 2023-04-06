@@ -103,7 +103,13 @@ public:
     }
 
     bool UseGeometryShaders() const {
+#ifndef __ANDROID__
         return features.geometryShader;
+#else
+        // Geometry shaders are extremely expensive on tilers to avoid them at all
+        // cost even if it hurts accuracy somewhat. TODO: Make this an option
+        return false;
+#endif
     }
 
     /// Returns true if anisotropic filtering is supported
