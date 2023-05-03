@@ -12,6 +12,8 @@
 
 namespace Common {
 
+DynamicLibrary::DynamicLibrary() = default;
+
 DynamicLibrary::DynamicLibrary(std::string_view name, int major, int minor) {
     auto full_name = GetLibraryName(name, major, minor);
     void(Load(full_name));

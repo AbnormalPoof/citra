@@ -63,6 +63,11 @@
              <string>OpenGL</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>Vulkan</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
