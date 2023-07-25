@@ -115,7 +115,7 @@ void FragmentModule::WriteDepth() {
     const Id input_pointer_id{TypePointer(spv::StorageClass::Input, f32_id)};
     const Id gl_frag_coord_z{
         OpLoad(f32_id, OpAccessChain(input_pointer_id, gl_frag_coord_id, ConstU32(2u)))};
-    const Id z_over_w{OpFma(f32_id, ConstF32(2.f), gl_frag_coord_z, ConstF32(-1.f))};
+    const Id z_over_w{OpFNegate(f32_id, gl_frag_coord_z)};
     const Id depth_scale{GetShaderDataMember(f32_id, ConstS32(2))};
     const Id depth_offset{GetShaderDataMember(f32_id, ConstS32(3))};
     depth = OpFma(f32_id, z_over_w, depth_scale, depth_offset);

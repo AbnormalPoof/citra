@@ -7,6 +7,7 @@
 #include "citra_qt/configuration/configure_graphics.h"
 #include "common/settings.h"
 #include "ui_configure_graphics.h"
+#include "video_core/renderer_vulkan/vk_instance.h"
 
 ConfigureGraphics::ConfigureGraphics(std::span<const QString> physical_devices, bool is_powered_on,
                                      QWidget* parent)

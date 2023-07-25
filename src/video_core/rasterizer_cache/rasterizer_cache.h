@@ -677,8 +677,8 @@ FramebufferHelper<T> RasterizerCache<T>::GetFramebufferSurfaces(bool using_color
         fb_rect = depth_rect;
     }
 
-    const Surface* color_surface = color_id ? &slot_surfaces[color_id] : nullptr;
-    const Surface* depth_surface = depth_id ? &slot_surfaces[depth_id] : nullptr;
+    Surface* color_surface = color_id ? &slot_surfaces[color_id] : nullptr;
+    Surface* depth_surface = depth_id ? &slot_surfaces[depth_id] : nullptr;
 
     if (color_id) {
         color_level = color_surface->LevelOf(color_params.addr);
@@ -691,7 +691,7 @@ FramebufferHelper<T> RasterizerCache<T>::GetFramebufferSurfaces(bool using_color
                         boost::icl::length(depth_vp_interval));
     }
 
-    fb_params = FramebufferParams{
+    const FramebufferParams fb_params = {
         .color_id = color_id,
         .depth_id = depth_id,
         .color_level = color_level,

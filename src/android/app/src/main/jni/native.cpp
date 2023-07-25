@@ -242,6 +242,9 @@ void Java_org_citra_citra_1emu_NativeLibrary_SurfaceChanged(JNIEnv* env,
     if (window) {
         window->OnSurfaceChanged(s_surf);
     }
+    if (VideoCore::g_renderer) {
+        VideoCore::g_renderer->NotifySurfaceChanged();
+    }
 
     LOG_INFO(Frontend, "Surface changed");
 }

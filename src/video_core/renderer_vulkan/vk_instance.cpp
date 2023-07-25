@@ -210,12 +210,16 @@ FormatTraits Instance::DetermineTraits(VideoCore::PixelFormat pixel_format, vk::
         best_usage |= vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst |
                       vk::ImageUsageFlagBits::eTransferSrc;
     }
-    if (supports_attachment) {
+    // Attachment flag is only needed for color and depth formats.
+    if (supports_attachment &&
+        VideoCore::GetFormatType(pixel_format) != VideoCore::SurfaceType::Texture) {
         best_usage |= (format_aspect & vk::ImageAspectFlagBits::eDepth)
                           ? vk::ImageUsageFlagBits::eDepthStencilAttachment
                           : vk::ImageUsageFlagBits::eColorAttachment;
     }
-    if (supports_storage) {
+    // Storage flag is only needed for shadow rendering with RGBA8 texture.
+    // Keeping it disables can boost performance on mobile drivers.
+    if (supports_storage && pixel_format == VideoCore::PixelFormat::RGBA8) {
         best_usage |= vk::ImageUsageFlagBits::eStorage;
     }
 
