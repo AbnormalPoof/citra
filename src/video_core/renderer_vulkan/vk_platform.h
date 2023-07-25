@@ -29,6 +29,6 @@ vk::UniqueInstance CreateInstance(const Common::DynamicLibrary& library,
                                   Frontend::WindowSystemType window_type, bool enable_validation,
                                   bool dump_command_buffers);
 
-DebugCallback CreateDebugCallback(vk::Instance instance);
+DebugCallback CreateDebugCallback(vk::Instance instance, bool& debug_utils_supported);
 
 } // namespace Vulkan

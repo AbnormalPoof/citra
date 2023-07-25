@@ -134,8 +134,8 @@ Instance::Instance(Frontend::EmuWindow& window, u32 physical_device_index)
                                   *library, window.GetWindowInfo().type,
                                   Settings::values.renderer_debug.GetValue(),
                                   Settings::values.dump_command_buffers.GetValue())},
-      debug_callback{CreateDebugCallback(*instance)}, physical_devices{
-                                                          instance->enumeratePhysicalDevices()} {
+      debug_callback{CreateDebugCallback(*instance, debug_utils_supported)},
+      physical_devices{instance->enumeratePhysicalDevices()} {
     const std::size_t num_physical_devices = static_cast<u16>(physical_devices.size());
     ASSERT_MSG(physical_device_index < num_physical_devices,
                "Invalid physical device index {} provided when only {} devices exist",
@@ -146,6 +146,7 @@ Instance::Instance(Frontend::EmuWindow& window, u32 physical_device_index)
 
     CollectTelemetryParameters();
     CreateDevice();
+    CollectToolingInfo();
     CreateFormatTable();
     CreateCustomFormatTable();
     CreateAttribTable();
@@ -403,6 +404,7 @@ bool Instance::CreateDevice() {
     add_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     image_format_list = add_extension(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     shader_stencil_export = add_extension(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME);
+    tooling_info = add_extension(VK_EXT_TOOLING_INFO_EXTENSION_NAME);
     const bool has_timeline_semaphores = add_extension(
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, is_qualcomm, "it is broken on Qualcomm drivers");
     const bool has_portability_subset = add_extension(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
@@ -576,6 +578,19 @@ void Instance::CollectTelemetryParameters() {
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName.data();
+}
+
+void Instance::CollectToolingInfo() {
+    if (!tooling_info) {
+        return;
+    }
+    const auto tools = physical_device.getToolProperties();
+    for (const vk::PhysicalDeviceToolProperties& tool : tools) {
+        const std::string_view name = tool.name;
+        LOG_INFO(Render_Vulkan, "Attached debugging tool: {}", name);
+        has_renderdoc = has_renderdoc || name == "RenderDoc";
+        has_nsight_graphics = has_nsight_graphics || name == "NVIDIA Nsight Graphics";
+    }
 }
 
 } // namespace Vulkan

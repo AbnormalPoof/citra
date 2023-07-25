@@ -343,7 +343,7 @@ vk::UniqueDebugReportCallbackEXT CreateDebugReportCallback(vk::Instance instance
     return instance.createDebugReportCallbackEXTUnique(callback_ci);
 }
 
-DebugCallback CreateDebugCallback(vk::Instance instance) {
+DebugCallback CreateDebugCallback(vk::Instance instance, bool& debug_utils_supported) {
     if (!Settings::values.renderer_debug) {
         return {};
     }
@@ -356,7 +356,8 @@ DebugCallback CreateDebugCallback(vk::Instance instance) {
         return std::strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, prop.extensionName) == 0;
     });
     // Prefer debug util messenger if available.
-    if (it != properties.end()) {
+    debug_utils_supported = it != properties.end();
+    if (debug_utils_supported) {
         return CreateDebugMessenger(instance);
     }
     // Otherwise fallback to debug report callback.
